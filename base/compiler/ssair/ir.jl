@@ -210,13 +210,15 @@ function getindex(x::UseRef)
     stmt = x.urs.stmt
     if isa(stmt, Expr) && stmt.head === :(=)
         rhs = stmt.args[2]
-        if isa(rhs, Expr) && is_relevant_expr(rhs)
-            x.use > length(rhs.args) && return OOBToken()
-            return rhs.args[x.use]
+        if isa(rhs, Expr)
+            if is_relevant_expr(rhs)
+                x.use > length(rhs.args) && return OOBToken()
+                return rhs.args[x.use]
+            end
         end
         x.use == 1 || return OOBToken()
         return rhs
-    elseif isa(stmt, Expr) && is_relevant_expr(stmt)
+    elseif isa(stmt, Expr) # @assert is_relevant_expr(stmt)
         x.use > length(stmt.args) && return OOBToken()
         return stmt.args[x.use]
     elseif isa(stmt, GotoIfNot)
@@ -246,14 +248,16 @@ function setindex!(x::UseRef, @nospecialize(v))
     stmt = x.urs.stmt
     if isa(stmt, Expr) && stmt.head === :(=)
         rhs = stmt.args[2]
-        if isa(rhs, Expr) && is_relevant_expr(rhs)
-            x.use > length(rhs.args) && throw(BoundsError())
-            rhs.args[x.use] = v
-        else
-            x.use == 1 || throw(BoundsError())
-            stmt.args[2] = v
+        if isa(rhs, Expr)
+            if is_relevant_expr(rhs)
+                x.use > length(rhs.args) && throw(BoundsError())
+                rhs.args[x.use] = v
+                return v
+            end
         end
-    elseif isa(stmt, Expr) && is_relevant_expr(stmt)
+        x.use == 1 || throw(BoundsError())
+        stmt.args[2] = v
+    elseif isa(stmt, Expr) # @assert is_relevant_expr(stmt)
         x.use > length(stmt.args) && throw(BoundsError())
         stmt.args[x.use] = v
     elseif isa(stmt, GotoIfNot)
