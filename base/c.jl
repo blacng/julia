@@ -164,9 +164,6 @@ function cconvert(::Type{Cwstring}, s::AbstractString)
     return v
 end
 
-eltype(::Type{Cstring}) = UInt8
-eltype(::Type{Cwstring}) = Cwchar_t
-
 containsnul(p::Ptr, len) =
     C_NULL != ccall(:memchr, Ptr{Cchar}, (Ptr{Cchar}, Cint, Csize_t), p, 0, len)
 containsnul(s::String) = containsnul(unsafe_convert(Ptr{Cchar}, s), sizeof(s))
